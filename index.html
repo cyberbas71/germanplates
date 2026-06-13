@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0b0f1a" />
+<meta name="description" content="Identify the city behind any German licence plate and see how far it is from you." />
+<title>Kennzeichen — German Plate Finder</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0f1a;
+    --bg2:#121a2e;
+    --card:rgba(255,255,255,0.06);
+    --card-brd:rgba(255,255,255,0.12);
+    --txt:#eef2ff;
+    --muted:#9aa6c4;
+    --accent:#ffce00;   /* German flag gold */
+    --accent2:#3b82f6;
+    --red:#ff4d4d;
+    --plate-blue:#003399; /* EU band */
+    --ok:#2ee6a8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(59,130,246,.25), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(255,206,0,.14), transparent 55%),
+      linear-gradient(160deg,var(--bg),var(--bg2));
+    background-attachment:fixed;
+    min-height:100dvh;
+    padding:
+      max(env(safe-area-inset-top),18px)
+      max(env(safe-area-inset-right),18px)
+      max(env(safe-area-inset-bottom),18px)
+      max(env(safe-area-inset-left),18px);
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .wrap{width:100%;max-width:460px;margin:0 auto;flex:1;display:flex;flex-direction:column;}
+
+  header{text-align:center;margin:8px 0 22px;}
+  .flag{display:inline-flex;gap:4px;border-radius:6px;overflow:hidden;margin-bottom:14px;
+        box-shadow:0 6px 20px rgba(0,0,0,.4);}
+  .flag span{width:24px;height:16px;display:block;}
+  .flag .b{background:#000;} .flag .r{background:#dd0000;} .flag .g{background:#ffce00;}
+  h1{font-family:Oswald;font-weight:700;font-size:25px;letter-spacing:.5px;margin:0;}
+  h1 b{color:var(--accent);}
+  .sub{color:var(--muted);font-size:13.5px;margin-top:6px;}
+
+  /* The licence plate input */
+  .plate{
+    position:relative;display:flex;align-items:stretch;
+    background:#f7f7f5;border:3px solid #11151f;border-radius:14px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.15);
+    overflow:hidden;height:92px;
+  }
+  .plate .eu{
+    background:var(--plate-blue);width:46px;flex:none;color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    padding-bottom:10px;gap:8px;
+  }
+  .stars{font-size:9px;line-height:1;color:var(--accent);letter-spacing:1px;text-align:center;padding-top:10px;}
+  .stars .ring{font-size:15px;}
+  .eu .d{font-family:Oswald;font-weight:700;font-size:18px;}
+  .plate input{
+    flex:1;border:0;background:transparent;outline:0;width:100%;
+    font-family:Oswald;font-weight:700;
+    font-size:46px;letter-spacing:3px;color:#10131b;
+    text-transform:uppercase;text-align:center;padding:0 6px;
+  }
+  .plate input::placeholder{color:#c2c2bd;}
+  .seal{
+    position:absolute;left:50%;top:8px;transform:translateX(-50%);
+    width:22px;height:22px;border-radius:50%;
+    background:radial-gradient(circle at 50% 40%, #ffe680, #d8a300);
+    border:1.5px solid #b98b00;display:none;
+  }
+
+  .hint{color:var(--muted);font-size:12px;text-align:center;margin:12px 2px 0;}
+
+  /* Result card */
+  .result{
+    margin-top:20px;border-radius:20px;padding:22px;
+    background:var(--card);border:1px solid var(--card-brd);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+    opacity:0;transform:translateY(14px) scale(.98);
+    transition:opacity .35s ease, transform .35s cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+  }
+  .result.show{opacity:1;transform:none;pointer-events:auto;}
+  .result .code{
+    display:inline-block;font-family:Oswald;font-weight:700;font-size:13px;
+    letter-spacing:2px;color:#10131b;background:var(--accent);
+    padding:5px 12px;border-radius:8px;margin-bottom:14px;
+  }
+  .city{font-family:Oswald;font-weight:700;font-size:30px;line-height:1.1;margin:0 0 4px;}
+  .region{color:var(--muted);font-size:14px;}
+
+  .dist{
+    margin-top:20px;display:flex;align-items:flex-end;gap:10px;
+    padding-top:18px;border-top:1px solid var(--card-brd);
+  }
+  .dist .num{font-family:Oswald;font-weight:700;font-size:44px;line-height:1;color:var(--accent);}
+  .dist .unit{font-size:16px;color:var(--muted);padding-bottom:6px;}
+  .dist .label{margin-left:auto;text-align:right;color:var(--muted);font-size:12px;max-width:46%;}
+
+  .meta{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{font-size:11.5px;color:var(--muted);background:rgba(255,255,255,.05);
+        border:1px solid var(--card-brd);border-radius:999px;padding:6px 11px;}
+
+  .geo-btn{
+    margin-top:14px;width:100%;border:0;border-radius:14px;cursor:pointer;
+    padding:14px;font-weight:600;font-size:14px;color:#0b0f1a;
+    background:linear-gradient(135deg,var(--accent),#ffd84a);
+    box-shadow:0 10px 24px rgba(255,206,0,.25);
+  }
+  .geo-btn.secondary{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid var(--card-brd);box-shadow:none;}
+
+  .err{margin-top:18px;text-align:center;color:var(--red);font-size:14px;min-height:18px;}
+
+  /* suggestions */
+  .suggest{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .suggest button{
+    text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--card-brd);
+    color:var(--txt);border-radius:12px;padding:11px 14px;font-size:14px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .suggest button b{font-family:Oswald;color:var(--accent);font-size:15px;letter-spacing:1px;}
+  .suggest button span{color:var(--muted);font-size:13px;}
+
+  footer{margin-top:auto;padding-top:26px;text-align:center;color:var(--muted);font-size:11.5px;}
+  footer a{color:var(--muted);}
+  .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;
+         box-shadow:0 0 0 0 rgba(46,230,168,.6);animation:p 1.8s infinite;}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(46,230,168,.5)}70%{box-shadow:0 0 0 9px rgba(46,230,168,0)}100%{box-shadow:0 0 0 0 rgba(46,230,168,0)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="flag"><span class="b"></span><span class="r"></span><span class="g"></span></div>
+      <h1>Kennzeichen<b>·</b>Finder</h1>
+      <div class="sub">Type a German plate prefix — find the city &amp; how far it is from you.</div>
+    </header>
+
+    <div class="plate" id="plateBox">
+      <div class="eu">
+        <div class="stars"><span class="ring">★</span><br>★ ★<br>★ ★</div>
+        <div class="d">D</div>
+      </div>
+      <input id="code" inputmode="text" autocomplete="off" autocapitalize="characters"
+             spellcheck="false" maxlength="3" placeholder="B" aria-label="Plate prefix" />
+      <div class="seal" id="seal"></div>
+    </div>
+    <div class="hint">e.g. <b>B</b> = Berlin · <b>M</b> = München · <b>HH</b> = Hamburg · <b>GAP</b> = Garmisch</div>
+
+    <div class="suggest" id="suggest"></div>
+
+    <div class="result" id="result">
+      <span class="code" id="rCode">B</span>
+      <div class="city" id="rCity">—</div>
+      <div class="region" id="rRegion"></div>
+
+      <div class="dist" id="distRow">
+        <div class="num" id="rDist">—</div>
+        <div class="unit">km away</div>
+        <div class="label" id="rDistLabel">from your location</div>
+      </div>
+
+      <div class="meta">
+        <div class="chip" id="chipBearing">↗ —</div>
+        <div class="chip" id="chipCoord">— , —</div>
+      </div>
+
+      <button class="geo-btn" id="locBtn">📍 Use my location</button>
+    </div>
+
+    <div class="err" id="err"></div>
+
+    <footer>
+      <div><span id="geoStatus"></span></div>
+      <div style="margin-top:8px">Offline-ready · Add to Home Screen · Data: German Kfz-Kennzeichen</div>
+    </footer>
+  </div>
+
+<script src="plates.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const input = $('code'), result = $('result'), err = $('err'), seal = $('seal');
+  const rCode=$('rCode'), rCity=$('rCity'), rRegion=$('rRegion'),
+        rDist=$('rDist'), rDistLabel=$('rDistLabel'),
+        chipBearing=$('chipBearing'), chipCoord=$('chipCoord'),
+        suggest=$('suggest'), locBtn=$('locBtn'), geoStatus=$('geoStatus');
+
+  let home = null;      // {lat,lng}
+  let current = null;   // currently shown plate entry
+
+  // ---- helpers ----
+  function haversine(a, b){
+    const R=6371, toR=x=>x*Math.PI/180;
+    const dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng);
+    const s=Math.sin(dLat/2)**2 + Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+    return 2*R*Math.asin(Math.sqrt(s));
+  }
+  function bearing(a,b){
+    const toR=x=>x*Math.PI/180, toD=x=>x*180/Math.PI;
+    const dLng=toR(b.lng-a.lng);
+    const y=Math.sin(dLng)*Math.cos(toR(b.lat));
+    const x=Math.cos(toR(a.lat))*Math.sin(toR(b.lat))-Math.sin(toR(a.lat))*Math.cos(toR(b.lat))*Math.cos(dLng);
+    return (toD(Math.atan2(y,x))+360)%360;
+  }
+  function compass(deg){
+    const dirs=['N','NE','E','SE','S','SW','W','NW'];
+    return dirs[Math.round(deg/45)%8];
+  }
+  const arrowFor=deg=>['↑','↗','→','↘','↓','↙','←','↖'][Math.round(deg/45)%8];
+
+  // longest-prefix match against the plate table
+  function lookup(raw){
+    // a plate prefix is the leading run of letters, before any space/hyphen/digit
+    const code = (raw.toUpperCase().match(/^[A-ZÄÖÜ]+/) || [''])[0];
+    if(!code) return null;
+    for(let len=Math.min(3,code.length); len>=1; len--){
+      const key = code.slice(0,len);
+      if(window.PLATES[key]) return {key, ...window.PLATES[key]};
+    }
+    return null;
+  }
+
+  function showSuggestions(raw){
+    const q = (raw.toUpperCase().match(/^[A-ZÄÖÜ]+/) || [''])[0];
+    suggest.innerHTML='';
+    if(q.length<1 || lookup(q)) return;
+    const hits = Object.keys(window.PLATES)
+      .filter(k=>k.startsWith(q)).slice(0,5);
+    hits.forEach(k=>{
+      const b=document.createElement('button');
+      b.innerHTML=`<b>${k}</b><span>${window.PLATES[k].city}</span>`;
+      b.onclick=()=>{ input.value=k; render(); input.focus(); };
+      suggest.appendChild(b);
+    });
+  }
+
+  function fmtDist(km){
+    if(km<10) return km.toFixed(1);
+    return Math.round(km).toLocaleString('de-DE');
+  }
+
+  function render(){
+    const raw = input.value;
+    showSuggestions(raw);
+    const hit = lookup(raw);
+    err.textContent='';
+    seal.style.display = raw ? 'block':'none';
+
+    if(!hit){
+      result.classList.remove('show');
+      current=null;
+      if(raw.replace(/[^A-ZÄÖÜ]/gi,'').length>=1)
+        err.textContent='No matching German registration code.';
+      return;
+    }
+    current=hit;
+    rCode.textContent=hit.key;
+    // city sometimes "City (district)" — split nicely
+    const m = hit.city.match(/^(.*?)\s*\((.*)\)\s*$/);
+    if(m){ rCity.textContent=m[1].trim(); rRegion.textContent=m[2].trim(); }
+    else { rCity.textContent=hit.city; rRegion.textContent='Registration district'; }
+    chipCoord.textContent=`${hit.lat.toFixed(3)}, ${hit.lng.toFixed(3)}`;
+    result.classList.add('show');
+    updateDistance();
+  }
+
+  function updateDistance(){
+    if(!current) return;
+    if(!home){
+      rDist.textContent='—';
+      rDistLabel.textContent='tap “Use my location”';
+      chipBearing.textContent='↗ —';
+      return;
+    }
+    const km=haversine(home,current);
+    const deg=bearing(home,current);
+    rDist.textContent=fmtDist(km);
+    rDistLabel.textContent = km<1 ? 'you’re basically there' : `to ${rCity.textContent}`;
+    chipBearing.textContent=`${arrowFor(deg)} ${compass(deg)} · ${Math.round(deg)}°`;
+  }
+
+  function getLocation(){
+    if(!navigator.geolocation){ err.textContent='Geolocation not supported.'; return; }
+    locBtn.textContent='📍 Locating…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      home={lat:pos.coords.latitude, lng:pos.coords.longitude};
+      locBtn.textContent='📍 Location set';
+      locBtn.classList.add('secondary');
+      geoStatus.innerHTML='<span class="pulse"></span>Using your live location';
+      try{ localStorage.setItem('home',JSON.stringify(home)); }catch(e){}
+      updateDistance();
+    }, e=>{
+      err.textContent = e.code===1
+        ? 'Location permission denied. Distances need your location.'
+        : 'Could not get your location.';
+      locBtn.textContent='📍 Use my location';
+    }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
+  }
+
+  // restore last known location for instant distances
+  try{
+    const saved=localStorage.getItem('home');
+    if(saved){ home=JSON.parse(saved); geoStatus.innerHTML='<span class="pulse"></span>Using saved location'; }
+  }catch(e){}
+
+  input.addEventListener('input', render);
+  locBtn.addEventListener('click', getLocation);
+  input.focus();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+})();
+</script>
+</body>
+</html>
