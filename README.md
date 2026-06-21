@@ -9,7 +9,7 @@ plate (the *Unterscheidungszeichen*, e.g. `B`, `M`, `HH`, `GAP`) and it tells yo
 
 ## Features
 
-- 🔌 **Works offline** — the full code database (630 prefixes) and the app are cached via a service worker.
+- 🔌 **Works offline** — the full code database (all 714 official prefixes) and the app are cached via a service worker.
 - 📱 **Installable** — "Add to Home Screen" turns it into a standalone app.
 - 🎯 **Smart matching** — longest-prefix lookup (`GAP` beats `G`), live suggestions, handles separators (`M-AB 123` → `M`).
 - 📍 **Location remembered** — your last position is saved locally for instant distances.
@@ -32,6 +32,11 @@ Geolocation requires `https://` (or `localhost`), which Vercel provides automati
 - `icons/gen.js` — regenerates the PNG app icons from scratch (no dependencies).
 
 ## Note on data
+
+The code → city mapping covers all **714 official distinguishing signs** and is
+verified against the authoritative [openpotato/kfz-kennzeichen](https://github.com/openpotato/kfz-kennzeichen)
+list. Every coordinate is additionally checked to fall inside the federal state
+(*Bundesland*) the code is registered in.
 
 Coordinates are the approximate centre of each issuing city/district, so distances
 are accurate to a few kilometres — perfect for "how far did that car come from?",
