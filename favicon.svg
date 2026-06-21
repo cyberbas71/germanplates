@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a84ff"></stop>
+      <stop offset="1" stop-color="#006fe6"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#bg)"></rect>
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"></rect>
+  
+  <g fill="#ffcc00">
+    <circle cx="256" cy="106" r="12"></circle>
+    <circle cx="331" cy="126.1" r="12"></circle>
+    <circle cx="385.9" cy="181" r="12"></circle>
+    <circle cx="406" cy="256" r="12"></circle>
+    <circle cx="385.9" cy="331" r="12"></circle>
+    <circle cx="331" cy="385.9" r="12"></circle>
+    <circle cx="256" cy="406" r="12"></circle>
+    <circle cx="181" cy="385.9" r="12"></circle>
+    <circle cx="126.1" cy="331" r="12"></circle>
+    <circle cx="106" cy="256" r="12"></circle>
+    <circle cx="126.1" cy="181" r="12"></circle>
+    <circle cx="181" cy="126.1" r="12"></circle>
+  </g>
+  
+  <text x="256" y="256" text-anchor="middle" dominant-baseline="central" font-family="Archivo, Arial, sans-serif" font-weight="900" font-size="190" fill="#ffffff">D</text>
+</svg>

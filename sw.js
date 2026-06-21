@@ -1,10 +1,10 @@
-const CACHE = 'kennzeichen-v1';
+const CACHE = 'kennzeichen-v2';
 const ASSETS = [
   './',
   './index.html',
   './plates.js',
   './manifest.webmanifest',
-  './icons/icon.svg',
+  './favicon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
